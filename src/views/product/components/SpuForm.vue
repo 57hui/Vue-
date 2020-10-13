@@ -52,26 +52,77 @@
 
     <!-- 销售属性 -->
     <el-form-item label="销售属性">
-      <el-select value="2">
-        <el-option label="选择颜色" value="1"></el-option>
-        <el-option label="选择版本" value="2"></el-option>
+      <el-select
+        v-model="attrId"
+        :placeholder="`${
+          unSelectedSaleAttrList.length > 0
+            ? `还有${unSelectedSaleAttrList.length}可以选择`
+            : '么得了'
+        }`"
+      >
+        <el-option
+          :label="attr.name"
+          :value="attr.id"
+          v-for="attr in unSelectedSaleAttrList"
+          :key="attr.id"
+        ></el-option>
       </el-select>
       <el-button type="primary" icon="el-icon-plus">添加销售属性</el-button>
       <!-- 表格 -->
-      <el-table data="" stripe style="width: 100%; margin-top: 20px" border>
+      <el-table
+        :data="spuInfo.spuSaleAttrList"
+        stripe
+        style="width: 100%; margin-top: 20px"
+        border
+      >
         <el-table-column type="index" label="序号" width="80px" align="center">
         </el-table-column>
-        <el-table-column prop="" label="属性名" width="150px">
+        <el-table-column prop="saleAttrName" label="属性名" width="150px">
         </el-table-column>
-        <el-table-column prop="" label="属性值名称列表"> </el-table-column>
+        <el-table-column label="属性值名称列表">
+          <template slot-scope="{ row, $index }">
+            <el-tag
+              :key="value.id"
+              v-for="value in row.spuSaleAttrValueList"
+              closable
+              :disable-transitions="false"
+              @close="handleClose(value)"
+            >
+              {{ value.saleAttrValueName }}
+            </el-tag>
+            <el-input
+              class="input-new-tag"
+              v-if="row.edit"
+              v-model="inputValue"
+              ref="saveTagInput"
+              size="small"
+              @keyup.enter.native="handleInputConfirm"
+              @blur="handleInputConfirm"
+            >
+            </el-input>
+            <el-button
+              v-else
+              class="button-new-tag"
+              size="small"
+              @click="showInput(row)"
+              >+ 添加</el-button
+            >
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="150px">
           <template slot-scope="{ row, $index }">
-            <HintButton
-              title="删除"
-              icon="el-icon-delete"
-              type="danger"
-              size="mini"
-            />
+            <el-popconfirm
+              :title="`您确定要删除 ${row.saleAttrName} 吗？`"
+              @onConfirm="deleteSaleAttr($index)"
+            >
+              <HintButton
+                title="删除"
+                icon="el-icon-delete"
+                type="danger"
+                size="mini"
+                slot="reference"
+              />
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -106,16 +157,35 @@ export default {
       trademarkList: [], //品牌信息数据
       spuImageList: [], //图片信息数据
       saleAttrList: [], //销售属性数据
+      attrId: "", // 用来存储选中的某个平台属性的id值
+      inputVisible: false,
+      inputValue: "",
     };
   },
+  // 计算属性
+  computed: {
+    unSelectedSaleAttrList() {
+      const {
+        saleAttrList,
+        spuInfo: { spuSaleAttrList },
+      } = this;
+      return saleAttrList.filter(
+        (sa) => !spuSaleAttrList.some((ssa) => ssa.saleAttrName === sa.name)
+      );
+    },
+  },
   methods: {
+    //   根据id删除销售属性操作
+    deleteSaleAttr(index) {
+      this.spuInfo.spuSaleAttrList.splice(index, 1);
+    },
     initUpdateData(spuId) {
       this.spuId = spuId;
       //   根据spuId获取spuInfo对象信息
       this.getSpuInfo();
       // 根据spuId获取当前的spuInfo对象中所有的图片信息数据对象数组
       this.getSpuImageList();
-      // 根据所有的品牌信息数据数组
+      // 获取所有的品牌信息数据数组
       this.getTrademarkList();
       // 获取所有的销售属性数据数组
       this.getSpuSaleAttrList();
@@ -139,10 +209,10 @@ export default {
         // 更新数据
         const spuImageList = result.data;
         // 因为el-upload组件中如果要显示图片，必须有name和url两个属性
-        spuImageList.forEach(item=>{
-            item.name=item.imgName
-            item.url=item.imgUrl
-        })
+        spuImageList.forEach((item) => {
+          item.name = item.imgName;
+          item.url = item.imgUrl;
+        });
         this.spuImageList = spuImageList;
       }
     },
@@ -170,7 +240,7 @@ export default {
     //   图片的回调函数
     // 执行删除图片操作时，立即更新图片信息数组
     handleRemove(file, fileList) {
-      this.spuImageList = fileList
+      this.spuImageList = fileList;
     },
     handlePictureCardPreview(file) {
       this.dialogImageUrl = file.url;
@@ -178,7 +248,7 @@ export default {
     },
     // 上传成功时立即更新图片信息数组
     handleSuccess(res, file, fileList) {
-        this.spuImageList = fileList
+      this.spuImageList = fileList;
     },
     // 上传图片的限制的回调函数
     beforeAvatarUpload(file) {
@@ -198,6 +268,35 @@ export default {
       return isJPG && isLt2M;
     }, // end
 
+    // 销售属性的回调函数
+    handleClose(tag) {
+      this.dynamicTags.splice(this.dynamicTags.indexOf(tag), 1);
+    },
+
+    showInput(attr) {
+      // 要进入到编辑模式
+      // 因为attr是销售属性对象,edit这个属性是后添加的,不是响应式的属性数据,所以,直接修改true或者false,是不是让界面渲染的
+      if (!attr.hasOwnProperty("edit")) {
+        // 添加这个响应式属性
+        this.$set(attr, "edit", true);
+      } else {
+        attr.edit = true;
+      }
+      this.$nextTick((_) => {
+        // 获取焦点
+        this.$refs.saveTagInput.$refs.input.focus();
+      });
+    },
+
+    handleInputConfirm() {
+      let inputValue = this.inputValue;
+      if (inputValue) {
+        this.dynamicTags.push(inputValue);
+      }
+      this.inputVisible = false;
+      this.inputValue = "";
+    },
+
     back() {
       this.$emit("update:visible", false);
     },
@@ -206,4 +305,19 @@ export default {
 </script>
 
 <style>
+.el-tag + .el-tag {
+  margin-left: 10px;
+}
+.button-new-tag {
+  margin-left: 10px;
+  height: 32px;
+  line-height: 30px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.input-new-tag {
+  width: 90px;
+  margin-left: 10px;
+  vertical-align: bottom;
+}
 </style>
