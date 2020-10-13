@@ -7,40 +7,52 @@
       <el-button type="primary" icon="el-icon-plus" style="margin-bottom: 20px"
         >添加SPU</el-button
       >
-      <el-table :data="spuInfoList" stripe style="width: 100%" border>
-        <el-table-column type="index" label="序号" width="80px" align="center">
-        </el-table-column>
-        <el-table-column prop="spuName" label="SPU名称"> </el-table-column>
-        <el-table-column prop="description" label="SPU描述"> </el-table-column>
-        <el-table-column label="操作">
-          <template slot-scope="{ row, $index }">
-            <HintButton
-              title="添加SPU"
-              icon="el-icon-plus"
-              type="primary"
-              size="mini"
-            />
-            <HintButton
-              title="修改SPU"
-              icon="el-icon-edit"
-              type="primary"
-              size="mini"
-            />
-            <HintButton
-              title="查看SKU"
-              icon="el-icon-info"
-              type="info"
-              size="mini"
-            />
-            <HintButton
-              title="删除"
-              icon="el-icon-delete"
-              type="danger"
-              size="mini"
-            />
-          </template>
-        </el-table-column>
-      </el-table>
+      <div v-show="!isShowSpuForm">
+        <el-table :data="spuInfoList" stripe style="width: 100%" border>
+          <el-table-column
+            type="index"
+            label="序号"
+            width="80px"
+            align="center"
+          >
+          </el-table-column>
+          <el-table-column prop="spuName" label="SPU名称"> </el-table-column>
+          <el-table-column prop="description" label="SPU描述">
+          </el-table-column>
+          <el-table-column label="操作">
+            <template slot-scope="{ row, $index }">
+              <HintButton
+                title="添加SKU"
+                icon="el-icon-plus"
+                type="primary"
+                size="mini"
+              />
+              <HintButton
+                title="修改SPU"
+                icon="el-icon-edit"
+                type="primary"
+                size="mini"
+                @click="updateSpuForm(row.id)"
+              />
+              <HintButton
+                title="查看SKU"
+                icon="el-icon-info"
+                type="info"
+                size="mini"
+              />
+              <HintButton
+                title="删除"
+                icon="el-icon-delete"
+                type="danger"
+                size="mini"
+              />
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <!-- 当父级组件向子级组件传递数据，子级组件需要修改父级组件的数据时，子级组件不能直接修改父级组件的数据，可以使用.sync来实现 -->
+      <SpuForm :visible.sync="isShowSpuForm" ref="spuForm" />
+
       <el-pagination
         @size-change="handleSizeChange"
         @current-change="getspuInfoList"
@@ -58,8 +70,14 @@
 </template>
 
 <script>
+// 引入组件
+import SpuForm from "../components/SpuForm";
 export default {
   name: "spuList",
+  // 注册组件
+  components: {
+    SpuForm,
+  },
   data() {
     return {
       category1Id: "", //一级分类的id
@@ -69,6 +87,7 @@ export default {
       limit: 3, // 默认每页三条数据
       total: 0, //总条数
       spuInfoList: [], // spu的列表数据
+      isShowSpuForm: false, //默认添加修改界面不显示
     };
   },
   methods: {
@@ -123,6 +142,13 @@ export default {
       // 重新获取数据
       this.getspuInfoList();
     },
+    // 点击修改按钮 切换添加或修改界面
+    updateSpuForm(spuId){
+       // 调用SpuForm组件中的初始化数据方法
+        this.$refs.spuForm.initUpdateData(spuId)
+      // 显示修改界面
+      this.isShowSpuForm = true
+    }
   },
 };
 </script>

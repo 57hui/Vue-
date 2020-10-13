@@ -63,10 +63,19 @@ export default {
   },
   //   根据页码和每页条数获取品牌信息数据列表
   getTrademarkList(page, limit) {
-    return request({
-      url: `${API_NAME}/${page}/${limit}`,
-      method: 'GET',
-    })
+    if (page && limit) {
+      return request({
+        url: `${API_NAME}/${page}/${limit}`,
+        method: 'GET',
+      })
+    } else {
+      return request({
+        url: `${API_NAME}/getTrademarkList`,
+        method: 'GET'
+      })
+    }
+
+
     // return request.post(`${API_NAME}/${page}/${limit}`)
   }
 }
