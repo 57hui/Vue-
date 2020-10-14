@@ -83,17 +83,17 @@
           <template slot-scope="{ row, $index }">
             <el-tag
               :key="value.id"
-              v-for="value in row.spuSaleAttrValueList"
+              v-for="(value,index) in row.spuSaleAttrValueList"
               closable
               :disable-transitions="false"
-              @close="handleClose(value)"
+              @close="handleClose(row.spuSaleAttrValueList(index))"
             >
               {{ value.saleAttrValueName }}
             </el-tag>
             <el-input
               class="input-new-tag"
               v-if="row.edit"
-              v-model="inputValue"
+              v-model="row.saleAttrValueName"
               ref="saveTagInput"
               size="small"
               @keyup.enter.native="handleInputConfirm"
@@ -269,8 +269,9 @@ export default {
     }, // end
 
     // 销售属性的回调函数
-    handleClose(tag) {
-      this.dynamicTags.splice(this.dynamicTags.indexOf(tag), 1);
+    // 点击删除按钮 删除属性值操作
+    handleClose(valueList,index) {
+      valueList.splice(index,1)
     },
 
     showInput(attr) {
