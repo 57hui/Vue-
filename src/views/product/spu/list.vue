@@ -1,13 +1,18 @@
 <template>
   <div>
     <el-card style="margin-bottom: 20px">
-      <CategorySelector @changeCategory="changeCategory" />
+      <CategorySelector ref="cs" @changeCategory="changeCategory" />
     </el-card>
     <el-card>
-      <el-button type="primary" icon="el-icon-plus" style="margin-bottom: 20px"
-        >添加SPU</el-button
-      >
       <div v-show="!isShowSpuForm">
+        <el-button
+          type="primary"
+          icon="el-icon-plus"
+          style="margin-bottom: 20px"
+          @click="addSpu"
+          :disabled="!category3Id"
+          >添加SPU</el-button
+        >
         <el-table :data="spuInfoList" stripe style="width: 100%" border>
           <el-table-column
             type="index"
@@ -49,22 +54,25 @@
             </template>
           </el-table-column>
         </el-table>
+        <el-pagination
+          @size-change="handleSizeChange"
+          @current-change="getspuInfoList"
+          :current-page="page"
+          :page-sizes="[3, 6, 9, 12]"
+          :page-size="limit"
+          layout=" prev, pager, next, jumper,->,sizes,total"
+          :total="total"
+          style="margin-top: 20px; text-align: center"
+          background
+        >
+        </el-pagination>
       </div>
       <!-- 当父级组件向子级组件传递数据，子级组件需要修改父级组件的数据时，子级组件不能直接修改父级组件的数据，可以使用.sync来实现 -->
-      <SpuForm :visible.sync="isShowSpuForm" ref="spuForm" />
-
-      <el-pagination
-        @size-change="handleSizeChange"
-        @current-change="getspuInfoList"
-        :current-page="page"
-        :page-sizes="[3, 6, 9, 12]"
-        :page-size="limit"
-        layout=" prev, pager, next, jumper,->,sizes,total"
-        :total="total"
-        style="margin-top: 20px; text-align: center"
-        background
-      >
-      </el-pagination>
+      <SpuForm
+        :visible.sync="isShowSpuForm"
+        ref="spuForm"
+        @saveSusccess="saveSusccess"
+      />
     </el-card>
   </div>
 </template>
@@ -89,6 +97,11 @@ export default {
       spuInfoList: [], // spu的列表数据
       isShowSpuForm: false, //默认添加修改界面不显示
     };
+  },
+  watch: {
+    isShowSpuForm(val) {
+      this.$refs.cs.isDisabled = val;
+    },
   },
   methods: {
     // 获取数据
@@ -143,12 +156,25 @@ export default {
       this.getspuInfoList();
     },
     // 点击修改按钮 切换添加或修改界面
-    updateSpuForm(spuId){
-       // 调用SpuForm组件中的初始化数据方法
-        this.$refs.spuForm.initUpdateData(spuId)
+    updateSpuForm(spuId) {
+      // 调用SpuForm组件中的初始化数据方法
+      this.$refs.spuForm.initUpdateData(spuId);
       // 显示修改界面
-      this.isShowSpuForm = true
-    }
+      this.isShowSpuForm = true;
+    },
+    // 保存成功
+    saveSusccess() {
+      this.isShowSpuForm = false;
+    },
+    // 添加SPU
+    addSpu() {
+      // 只有当获取三级分类id时才能添加SPU
+      const category3Id = this.category3Id;
+      // 因为父级组件中没有spuInfo对象，所以我们可以在子级组件中完成添加功能，通过$refs的方法可以获得添加功能的方法，但是因为子级组件没有三级分类id所以需要把category3Id传过去
+      this.$refs.spuForm.initAddData(category3Id);
+      // 切换页面
+      this.isShowSpuForm = true;
+    },
   },
 };
 </script>

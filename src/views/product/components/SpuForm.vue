@@ -88,7 +88,7 @@
               v-for="(value, index) in row.spuSaleAttrValueList"
               closable
               :disable-transitions="false"
-              @close="handleClose(row.spuSaleAttrValueList(index))"
+              @close="handleClose(row.spuSaleAttrValueList, index)"
             >
               {{ value.saleAttrValueName }}
             </el-tag>
@@ -132,7 +132,7 @@
 
     <!-- 两个按钮 -->
     <el-form-item>
-      <el-button type="primary">保存</el-button>
+      <el-button type="primary" @click="saveSpu">保存</el-button>
       <el-button @click="back">取消</el-button>
     </el-form-item>
   </el-form>
@@ -330,7 +330,73 @@ export default {
       // 清空
       this.attrIdAttrName = "";
     },
-
+    // 保存spu
+    async saveSpu() {
+      // 获取spuInfo和spuImageList数据
+      const { spuInfo, spuImageList } = this;
+      // 过滤销售属性数据和删除无用数据(spuInfo.spuSaleAttrList)
+      spuInfo.spuSaleAttrList = spuInfo.spuSaleAttrList.filter((item) => {
+        // 判断当前的销售属性对象中的属性值数组中有数据
+        if (item.spuSaleAttrValueList.length > 0) {
+          delete item.edit;
+          delete item.saleAttrValueName;
+          return true;
+        }
+        return false;
+      });
+      // 过滤图片信息数据 spuImageList
+      spuInfo.spuImageList = spuImageList.map((img) => ({
+        imgName: img.name,
+        imgUrl: img.response ? img.response.data : img.imgUrl,
+      }));
+      // 调用api接口
+      const result = await this.$API.spu.addOrUpdateSpuInfo(spuInfo);
+      // 判断是否成功
+      if (result.code === 200) {
+        // 成功的提示信息
+        this.$message.success("保存SPU成功");
+        // 关闭界面
+        // this.back()
+        this.$emit("update:visible", false);
+        // 重置数据
+        this.resetData();
+        // 通知父级组件
+        this.$emit("saveSusccess");
+      } else {
+        this.$message.error("保存SPU失败");
+      }
+    },
+    // 重置数据
+    resetData() {
+      this.dialogImageUrl = "";
+      this.dialogVisible = false;
+      this.spuId = ""; //spu的id值
+      this.attrIdAttrName = ""; //用来存储选中的某个平台属性的id值和名称
+      //spuInfo对象
+      (this.spuInfo = {
+        spuName: "", //SPU名称
+        description: "", //spu描述
+        category3Id: "", //三级分类id
+        tmId: "", //品牌id
+        spuSaleAttrList: [], //销售属性信息数组
+        spuImageList: [], // 图片数组信息数据
+      }),
+        (this.trademarkList = []); //品牌信息数据
+      this.spuImageList = []; //图片信息数据
+      this.saleAttrList = []; //销售属性数据
+      this.attrId = ""; // 用来存储选中的某个平台属性的id值
+      this.inputVisible = false;
+      this.inputValue = "";
+    },
+    //  添加spu操作的时候的初始化数据方法
+    initAddData(category3Id) {
+      // 将category3Id保存在spuInfo对象中
+      this.spuInfo.category3Id = category3Id;
+      // 重新获取品牌信息数据
+      this.getTrademarkList();
+      //  重新获取销售属性信息数据
+      this.getSpuSaleAttrList()
+    },
     back() {
       this.$emit("update:visible", false);
     },
