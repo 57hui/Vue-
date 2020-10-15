@@ -83,7 +83,7 @@
           <template slot-scope="{ row, $index }">
             <el-tag
               :key="value.id"
-              v-for="(value,index) in row.spuSaleAttrValueList"
+              v-for="(value, index) in row.spuSaleAttrValueList"
               closable
               :disable-transitions="false"
               @close="handleClose(row.spuSaleAttrValueList(index))"
@@ -96,8 +96,8 @@
               v-model="row.saleAttrValueName"
               ref="saveTagInput"
               size="small"
-              @keyup.enter.native="handleInputConfirm"
-              @blur="handleInputConfirm"
+              @keyup.enter.native="handleInputConfirm(row)"
+              @blur="handleInputConfirm(row)"
             >
             </el-input>
             <el-button
@@ -270,8 +270,8 @@ export default {
 
     // 销售属性的回调函数
     // 点击删除按钮 删除属性值操作
-    handleClose(valueList,index) {
-      valueList.splice(index,1)
+    handleClose(valueList, index) {
+      valueList.splice(index, 1);
     },
 
     showInput(attr) {
@@ -288,14 +288,31 @@ export default {
         this.$refs.saveTagInput.$refs.input.focus();
       });
     },
-
-    handleInputConfirm() {
-      let inputValue = this.inputValue;
-      if (inputValue) {
-        this.dynamicTags.push(inputValue);
+    // 添加属性值操作
+    handleInputConfirm(attr) {
+      // 获取文本框中输入的内容
+      const saleAttrValueName = attr.saleAttrValueName;
+      // 判断数据是否存在
+      if (saleAttrValueName) {
+        const isRespeat = attr.spuSaleAttrValueList.some(
+          (value) => value.saleAttrValueName === saleAttrValueName
+        );
+        // 判断数据是否重复
+        if (!isRespeat) {
+          attr.spuSaleAttrValueList.push({
+            baseSaleAttrId: attr.baseSaleAttrId,
+            saleAttrValueName,
+          });
+        } else {
+          // 失败的提示信息
+          this.$message.warning("不能添加重复值");
+          return;
+        }
       }
-      this.inputVisible = false;
-      this.inputValue = "";
+      // 进入查看模式
+      attr.edit = false;
+      // 清空文本框
+      attr.saleAttrValueName = "";
     },
 
     back() {
