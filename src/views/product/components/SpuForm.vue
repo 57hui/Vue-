@@ -53,7 +53,7 @@
     <!-- 销售属性 -->
     <el-form-item label="销售属性">
       <el-select
-        v-model="attrId"
+        v-model="attrIdAttrName"
         :placeholder="`${
           unSelectedSaleAttrList.length > 0
             ? `还有${unSelectedSaleAttrList.length}可以选择`
@@ -62,12 +62,14 @@
       >
         <el-option
           :label="attr.name"
-          :value="attr.id"
+          :value="attr.id + ':' + attr.name"
           v-for="attr in unSelectedSaleAttrList"
           :key="attr.id"
         ></el-option>
       </el-select>
-      <el-button type="primary" icon="el-icon-plus">添加销售属性</el-button>
+      <el-button type="primary" icon="el-icon-plus" @click="addAttr"
+        >添加销售属性</el-button
+      >
       <!-- 表格 -->
       <el-table
         :data="spuInfo.spuSaleAttrList"
@@ -145,6 +147,7 @@ export default {
       dialogImageUrl: "",
       dialogVisible: false,
       spuId: "", //spu的id值
+      attrIdAttrName: "", //用来存储选中的某个平台属性的id值和名称
       //spuInfo对象
       spuInfo: {
         spuName: "", //SPU名称
@@ -313,6 +316,19 @@ export default {
       attr.edit = false;
       // 清空文本框
       attr.saleAttrValueName = "";
+    },
+    // 添加销售属性
+    addAttr() {
+      // 获取当前选中的销售属性数据
+      const [baseSaleAttrId, saleAttrName] = this.attrIdAttrName.split(":");
+      // 把当前选中的销售属性添加到表格中
+      this.spuInfo.spuSaleAttrList.push({
+        baseSaleAttrId,
+        saleAttrName,
+        spuSaleAttrValueList: [],
+      });
+      // 清空
+      this.attrIdAttrName = "";
     },
 
     back() {
